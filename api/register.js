@@ -5,14 +5,14 @@ function getPeriod(slots) {
   if (!slots || !slots.length) return null;
   const first = slots[0];
   if (typeof first === 'object' && first.periodId) {
-    const pid = first.periodId;
-    if (pid === '1' || pid === 1) return '第一期';
-    if (pid === '2' || pid === 2) return '第二期';
-    if (pid === '3' || pid === 3) return '第三期';
-    if (pid === '4' || pid === 4) return '第四期';
+    const pid = String(first.periodId);
+    if (pid === 'p1' || pid === '1') return '第一期';
+    if (pid === 'p2' || pid === '2') return '第二期';
+    if (pid === 'p3' || pid === '3') return '第三期';
+    if (pid === 'p4' || pid === '4') return '第四期';
     return null;
   }
-  const str = typeof first === 'string' ? first : JSON.stringify(first);
+  const str = typeof first === 'string' ? first : (first.day || '');
   const dayMatch = str.match(/(\d+)\/(\d+)/);
   if (!dayMatch) return null;
   const day = parseInt(dayMatch[2]);
