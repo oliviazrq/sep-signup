@@ -1,18 +1,35 @@
 // /api/my.js — Vercel Serverless Function
 // Looks up signup records by TikTok username from Bitable
 
-const { searchRecords, TABLE_LOCAL, TABLE_OVERSEAS } = require('./lark.js');
+const { larkRequest, BASE_TOKEN, TABLE_LOCAL, TABLE_OVERSEAS } = require('./lark.js');
 
 function extractTextField(val) {
   if (!val) return '';
   if (typeof val === 'string') return val;
-  if (Array.isArray(val)) return val.map(v => v.text || v).join('');
+  if (Array.isArray(val)) return val.map(function(v) { return v.text || v; }).join('');
   if (val.text) return val.text;
   return String(val);
 }
 
+async function searchByUsername(tableId, username) {
+  const body = {
+    filter: {
+      conjunction: "and",
+      conditions: [{
+        field_name: "TikTok 使用者名稱",
+        operator: "is",
+        value: [username]
+      }]
+    },
+    page_size: 20
+  };
+  return larkRequest('POST',
+    `/open-apis/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/records/search`,
+    body
+  );
+}
+
 module.exports = async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -28,12 +45,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Search both tables for this username
-    const filter = `CurrentValue.[TikTok 使用者名稱] = "${username}"`;
-
     const [localRes, overseasRes] = await Promise.all([
-      searchRecords(TABLE_LOCAL, filter),
-      searchRecords(TABLE_OVERSEAS, filter),
+      searchByUsername(TABLE_LOCAL, username),
+      searchByUsername(TABLE_OVERSEAS, username),
     ]);
 
     const results = [];
@@ -46,10 +60,9 @@ module.exports = async function handler(req, res) {
           username: extractTextField(item.fields['TikTok 使用者名稱']),
           videoUrl: extractTextField(item.fields['推薦推流短影片連結']),
           slots: extractTextField(item.fields['申請時段']),
-          period: item.fields['申請期數'] || '',
-          status: item.fields['審核狀態'] || '待審核',
-          note: extractTextField(item.fields['審核備註']),
-          createdAt: item.fields['提交時間'] || item.created_time,
+          period: extractTextField(item.fields['申請期數']),
+          status: extractTextField(item.fields['審核狀態']),
+          createdAt: item.fields['提交時間'] || '',
         });
       }
     }
@@ -62,13 +75,9 @@ module.exports = async function handler(req, res) {
           username: extractTextField(item.fields['TikTok 使用者名稱']),
           videoUrl: extractTextField(item.fields['推薦推流短影片連結']),
           slots: extractTextField(item.fields['申請時段']),
-          period: item.fields['申請期數'] || '',
-          status: item.fields['審核狀態'] || '待審核',
-          pk: item.fields['願意與海外主播PK'] || '',
-          kyc: item.fields['掃碼授權完成'] || '',
-          liveStudio: item.fields['LIVE Studio 權限'] || '',
-          note: extractTextField(item.fields['審核備註']),
-          createdAt: item.fields['提交時間'] || item.created_time,
+          period: extractTextField(item.fields['申請期數']),
+          status: extractTextField(item.fields['審核狀態']),
+          createdAt: item.fields['提交時間'] || '',
         });
       }
     }
