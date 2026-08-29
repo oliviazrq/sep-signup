@@ -1,4 +1,3 @@
-// /api/register.js — Vercel Serverless Function
 const { createRecord, TABLE_LOCAL, TABLE_OVERSEAS } = require('./lark.js');
 
 function getPeriod(slots) {
@@ -35,55 +34,28 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, message: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'Method not allowed' });
 
   const body = req.body;
-  if (!body || !body.username || !body.track) {
-    return res.status(400).json({ ok: false, message: '缺少必填欄位' });
-  }
+  if (!body || !body.username || !body.track) return res.status(400).json({ ok: false, message: '缺少必填欄位' });
 
   try {
     const period = getPeriod(body.slots);
     const slotsText = slotsToText(body.slots);
 
     if (body.track === 'A') {
-      const fields = {
-        'TikTok 使用者名稱': body.username,
-        '申請時段': slotsText,
-        '賽道': '本地流量',
-        '審核狀態': '待審核',
-      };
+      const fields = { 'TikTok 使用者名稱': body.username, '申請時段': slotsText, '賽道': '本地流量', '審核狀態': '待審核' };
       if (body.videoUrl) fields['推薦推流短影片連結'] = body.videoUrl;
       if (period) fields['申請期數'] = period;
-
       const result = await createRecord(TABLE_LOCAL, fields);
-      if (result.code !== 0) {
-        console.error('Bitable error:', JSON.stringify(result));
-        return res.status(500).json({ ok: false, message: result.msg || 'Bitable write failed' });
-      }
+      if (result.code !== 0) return res.status(500).json({ ok: false, message: result.msg || 'failed' });
       return res.status(200).json({ ok: true, record_id: result.data?.record?.record_id });
-
     } else {
-      const fields = {
-        'TikTok 使用者名稱': body.username,
-        '申請時段': slotsText,
-        '賽道': '海外流量',
-        '審核狀態': '待審核',
-        '掃碼授權完成': body.overseasKycScanned === 'yes' ? '是' : '否',
-        '願意與海外主播PK': body.overseasWillingPk === 'yes' ? '是' : '否',
-        'LIVE Studio 權限': body.overseasHasLiveStudio === 'yes' ? '是' : '否',
-      };
+      const fields = { 'TikTok 使用者名稱': body.username, '申請時段': slotsText, '賽道': '海外流量', '審核狀態': '待審核', '掃碼授權完成': body.overseasKycScanned === 'yes' ? '是' : '否', '願意與海外主播PK': body.overseasWillingPk === 'yes' ? '是' : '否', 'LIVE Studio 權限': body.overseasHasLiveStudio === 'yes' ? '是' : '否' };
       if (body.videoUrl) fields['推薦推流短影片連結'] = body.videoUrl;
       if (period) fields['申請期數'] = period;
-
       const result = await createRecord(TABLE_OVERSEAS, fields);
-      if (result.code !== 0) {
-        console.error('Bitable error:', JSON.stringify(result));
-        return res.status(500).json({ ok: false, message: result.msg || 'Bitable write failed' });
-      }
+      if (result.code !== 0) return res.status(500).json({ ok: false, message: result.msg || 'failed' });
       return res.status(200).json({ ok: true, record_id: result.data?.record?.record_id });
     }
   } catch (err) {
