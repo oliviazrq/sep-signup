@@ -1,19 +1,33 @@
 // /api/register.js — Vercel Serverless Function
-// Writes signup records to Lark Bitable
-
 const { createRecord, TABLE_LOCAL, TABLE_OVERSEAS } = require('./lark.js');
 
-// Determine 申請期數 from selected slots
 function getPeriod(slots) {
   if (!slots || !slots.length) return null;
-  const firstSlot = slots[0];
-  const dayMatch = firstSlot.match(/(\d+)\/(\d+)/);
+  const first = slots[0];
+  if (typeof first === 'object' && first.periodId) {
+    const pid = first.periodId;
+    if (pid === '1' || pid === 1) return '第一期';
+    if (pid === '2' || pid === 2) return '第二期';
+    if (pid === '3' || pid === 3) return '第三期';
+    if (pid === '4' || pid === 4) return '第四期';
+    return null;
+  }
+  const str = typeof first === 'string' ? first : JSON.stringify(first);
+  const dayMatch = str.match(/(\d+)\/(\d+)/);
   if (!dayMatch) return null;
   const day = parseInt(dayMatch[2]);
   if (day <= 7) return '第一期';
   if (day <= 14) return '第二期';
   if (day <= 21) return '第三期';
   return '第四期';
+}
+
+function slotsToText(slots) {
+  if (!slots || !slots.length) return '';
+  return slots.map(function(s) {
+    if (typeof s === 'string') return s;
+    return (s.day || '') + '（' + (s.weekday || '') + '）' + (s.time || '');
+  }).join('\n');
 }
 
 module.exports = async function handler(req, res) {
@@ -33,7 +47,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const period = getPeriod(body.slots);
-    const slotsText = (body.slots || []).join('\n');
+    const slotsText = slotsToText(body.slots);
 
     if (body.track === 'A') {
       const fields = {
