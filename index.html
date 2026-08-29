@@ -663,7 +663,10 @@
           const e = document.createElement('div'); e.className = 'lookup-entry';
           const t = document.createElement('div'); t.className = 'lookup-entry-title'; t.textContent = '報名紀錄 #'+(i+1);
           const m = document.createElement('div'); m.className = 'lookup-entry-meta';
-          ['賽道：'+normalizeTrackText(item.track), '狀態：'+(item.status||'待審核')].forEach(function(l) { const d = document.createElement('div'); d.textContent = l; m.appendChild(d); });
+          var lines = ['賽道：'+normalizeTrackText(item.track), '狀態：'+(item.status||'待審核')];
+          if (item.slots) lines.push('申請時段：'+item.slots.replace(/\n/g, '、'));
+          if (item.period) lines.push('期數：'+item.period);
+          lines.forEach(function(l) { const d = document.createElement('div'); d.textContent = l; m.appendChild(d); });
           e.appendChild(t); e.appendChild(m); lookupResults.appendChild(e);
         });
       }
