@@ -3,7 +3,15 @@
 
 const { searchRecords, TABLE_LOCAL, TABLE_OVERSEAS } = require('./lark.js');
 
-export default async function handler(req, res) {
+function extractTextField(val) {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.map(v => v.text || v).join('');
+  if (val.text) return val.text;
+  return String(val);
+}
+
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -35,12 +43,12 @@ export default async function handler(req, res) {
         results.push({
           record_id: item.record_id,
           track: '本地流量',
-          username: item.fields['TikTok 使用者名稱']?.[0]?.text || item.fields['TikTok 使用者名稱'] || '',
-          videoUrl: item.fields['推薦推流短影片連結']?.[0]?.text || '',
-          slots: item.fields['申請時段']?.[0]?.text || item.fields['申請時段'] || '',
+          username: extractTextField(item.fields['TikTok 使用者名稱']),
+          videoUrl: extractTextField(item.fields['推薦推流短影片連結']),
+          slots: extractTextField(item.fields['申請時段']),
           period: item.fields['申請期數'] || '',
           status: item.fields['審核狀態'] || '待審核',
-          note: item.fields['審核備註']?.[0]?.text || item.fields['審核備註'] || '',
+          note: extractTextField(item.fields['審核備註']),
           createdAt: item.fields['提交時間'] || item.created_time,
         });
       }
@@ -51,15 +59,15 @@ export default async function handler(req, res) {
         results.push({
           record_id: item.record_id,
           track: '海外流量',
-          username: item.fields['TikTok 使用者名稱']?.[0]?.text || item.fields['TikTok 使用者名稱'] || '',
-          videoUrl: item.fields['推薦推流短影片連結']?.[0]?.text || '',
-          slots: item.fields['申請時段']?.[0]?.text || item.fields['申請時段'] || '',
+          username: extractTextField(item.fields['TikTok 使用者名稱']),
+          videoUrl: extractTextField(item.fields['推薦推流短影片連結']),
+          slots: extractTextField(item.fields['申請時段']),
           period: item.fields['申請期數'] || '',
           status: item.fields['審核狀態'] || '待審核',
           pk: item.fields['願意與海外主播PK'] || '',
           kyc: item.fields['掃碼授權完成'] || '',
           liveStudio: item.fields['LIVE Studio 權限'] || '',
-          note: item.fields['審核備註']?.[0]?.text || item.fields['審核備註'] || '',
+          note: extractTextField(item.fields['審核備註']),
           createdAt: item.fields['提交時間'] || item.created_time,
         });
       }
@@ -70,4 +78,4 @@ export default async function handler(req, res) {
     console.error('My records error:', err);
     return res.status(500).json({ ok: false, message: '查詢失敗，請稍後再試' });
   }
-}
+};
