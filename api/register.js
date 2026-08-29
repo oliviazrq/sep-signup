@@ -16,7 +16,7 @@ function getPeriod(slots) {
   return '第四期';
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -40,17 +40,16 @@ export default async function handler(req, res) {
       // 本地流量 table
       const fields = {
         'TikTok 使用者名稱': body.username,
-        '推薦推流短影片連結': body.videoUrl ? { link: body.videoUrl, text: body.videoUrl } : undefined,
+        '推薦推流短影片連結': body.videoUrl || '',
         '申請時段': slotsText,
         '賽道': '本地流量',
         '審核狀態': '待審核',
       };
       if (period) fields['申請期數'] = period;
-      // Remove undefined values
-      Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
 
       const result = await createRecord(TABLE_LOCAL, fields);
       if (result.code !== 0) {
+        console.error('Bitable error:', JSON.stringify(result));
         return res.status(500).json({ ok: false, message: result.msg || 'Bitable write failed' });
       }
       return res.status(200).json({ ok: true, record_id: result.data?.record?.record_id });
@@ -59,7 +58,7 @@ export default async function handler(req, res) {
       // 海外流量 table
       const fields = {
         'TikTok 使用者名稱': body.username,
-        '推薦推流短影片連結': body.videoUrl ? { link: body.videoUrl, text: body.videoUrl } : undefined,
+        '推薦推流短影片連結': body.videoUrl || '',
         '申請時段': slotsText,
         '賽道': '海外流量',
         '審核狀態': '待審核',
@@ -68,10 +67,10 @@ export default async function handler(req, res) {
         'LIVE Studio 權限': body.overseasHasLiveStudio === 'yes' ? '是' : '否',
       };
       if (period) fields['申請期數'] = period;
-      Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
 
       const result = await createRecord(TABLE_OVERSEAS, fields);
       if (result.code !== 0) {
+        console.error('Bitable error:', JSON.stringify(result));
         return res.status(500).json({ ok: false, message: result.msg || 'Bitable write failed' });
       }
       return res.status(200).json({ ok: true, record_id: result.data?.record?.record_id });
@@ -80,4 +79,4 @@ export default async function handler(req, res) {
     console.error('Register error:', err);
     return res.status(500).json({ ok: false, message: '伺服器錯誤，請稍後再試' });
   }
-}
+};
