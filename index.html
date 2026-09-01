@@ -479,7 +479,7 @@
             </div>
             <h1 class="hero-title">9月午間開播．金秋衝量計畫<span class="sparkle-icon">🍁</span></h1>
             <div class="hero-meta">
-              <div class="meta-pill"><span>📅 9/1 – 9/30</span></div>
+              <div class="meta-pill"><span>📅 9/2 – 9/30</span></div>
               <button type="button" class="hero-view-btn" id="openLookupModal"><span>🔍 查看我的報名</span></button>
             </div>
           </div>
@@ -550,7 +550,7 @@
               <div class="question-body">
                 <div class="period-section">
                   <div class="period-tabs" id="periodTabs">
-                    <button type="button" class="period-tab active" data-period="p1">第一期 9/1–9/7<span class="period-deadline">（報名至 9/5）</span></button>
+                    <button type="button" class="period-tab active" data-period="p1">第一期 9/2–9/7<span class="period-deadline">（報名至 9/5）</span></button>
                     <button type="button" class="period-tab" data-period="p2">第二期 9/8–9/14<span class="period-deadline">（報名至 9/12）</span></button>
                     <button type="button" class="period-tab" data-period="p3">第三期 9/15–9/21<span class="period-deadline">（報名至 9/19）</span></button>
                     <button type="button" class="period-tab" data-period="p4">第四期 9/22–9/30</button>
@@ -663,10 +663,7 @@
           const e = document.createElement('div'); e.className = 'lookup-entry';
           const t = document.createElement('div'); t.className = 'lookup-entry-title'; t.textContent = '報名紀錄 #'+(i+1);
           const m = document.createElement('div'); m.className = 'lookup-entry-meta';
-          var lines = ['賽道：'+normalizeTrackText(item.track), '狀態：'+(item.status||'待審核')];
-          if (item.slots) lines.push('申請時段：'+item.slots.replace(/\n/g, '、'));
-          if (item.period) lines.push('期數：'+item.period);
-          lines.forEach(function(l) { const d = document.createElement('div'); d.textContent = l; m.appendChild(d); });
+          ['賽道：'+normalizeTrackText(item.track), '狀態：'+(item.status||'待審核')].forEach(function(l) { const d = document.createElement('div'); d.textContent = l; m.appendChild(d); });
           e.appendChild(t); e.appendChild(m); lookupResults.appendChild(e);
         });
       }
@@ -705,8 +702,8 @@
       let overseasStudio = null;
 
       const periodData = [
-        { id:'p1', label:'第一期', range:'9/1–9/7', openMonth:9, openDay:1, closeMonth:9, closeDay:5, forceOpen:true,
-          days:[{date:'9/1',m:9,d:1},{date:'9/2',m:9,d:2},{date:'9/3',m:9,d:3},{date:'9/4',m:9,d:4},{date:'9/5',m:9,d:5},{date:'9/6',m:9,d:6},{date:'9/7',m:9,d:7}] },
+        { id:'p1', label:'第一期', range:'9/2–9/7', openMonth:9, openDay:2, closeMonth:9, closeDay:5, forceOpen:true,
+          days:[{date:'9/2',m:9,d:2},{date:'9/3',m:9,d:3},{date:'9/4',m:9,d:4},{date:'9/5',m:9,d:5},{date:'9/6',m:9,d:6},{date:'9/7',m:9,d:7}] },
         { id:'p2', label:'第二期', range:'9/8–9/14', openMonth:9, openDay:8, closeMonth:9, closeDay:12,
           days:[{date:'9/8',m:9,d:8},{date:'9/9',m:9,d:9},{date:'9/10',m:9,d:10},{date:'9/11',m:9,d:11},{date:'9/12',m:9,d:12},{date:'9/13',m:9,d:13},{date:'9/14',m:9,d:14}] },
         { id:'p3', label:'第三期', range:'9/15–9/21', openMonth:9, openDay:15, closeMonth:9, closeDay:19,
