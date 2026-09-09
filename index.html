@@ -723,6 +723,36 @@
       function isPeriodClosed(p){ if(p.closeMonth==null||p.closeDay==null) return false; return today0().getTime()>new Date(CAMPAIGN_YEAR,p.closeMonth-1,p.closeDay).getTime(); }
       function isDayPast(day){ if(today0().getTime()<new Date(CAMPAIGN_YEAR,8,1).getTime()) return false; return today0().getTime()>new Date(CAMPAIGN_YEAR,day.m-1,day.d).getTime(); }
       function formatDate(d){ return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+      function isLocalFullSlot(cb){ return selectedTrack==='A' && cb && cb.dataset.slot==='12:00-14:00'; }
+      function updateSlotLabel(cb, forcedFull){
+        const text = cb.parentElement.querySelector('.slot-pill-text');
+        if(text) text.textContent = forcedFull ? '報名時間段已滿' : (cb.dataset.slot || '');
+        cb.parentElement.classList.toggle('full', forcedFull);
+        cb.parentElement.title = forcedFull ? '本地賽道 12:00-14:00 已滿' : '';
+      }
+      function syncRowSlotState(row){
+        const rowLocked = row.classList.contains('period-locked') || row.classList.contains('past-locked');
+        const cbs = Array.from(row.querySelectorAll('.slot-checkbox'));
+        cbs.forEach(function(cb){ if(isLocalFullSlot(cb) && cb.checked) cb.checked = false; });
+        const active = cbs.find(function(cb){ return cb.checked; }) || null;
+        cbs.forEach(function(cb){
+          const forcedFull = isLocalFullSlot(cb);
+          const pill = cb.parentElement;
+          const disabled = rowLocked || forcedFull || (!!active && cb !== active);
+          updateSlotLabel(cb, forcedFull);
+          cb.disabled = disabled;
+          if(cb === active && !forcedFull && !rowLocked){
+            pill.classList.add('selected');
+            pill.classList.remove('disabled');
+          } else if(disabled) {
+            cb.checked = false;
+            pill.classList.remove('selected');
+            pill.classList.add('disabled');
+          } else {
+            pill.classList.remove('selected','disabled');
+          }
+        });
+      }
 
       function renderPeriods() {
         periodPanels.innerHTML = '';
@@ -737,8 +767,9 @@
             ['10:00-12:00','12:00-14:00'].forEach(function(slotText) {
               const pill = document.createElement('label'); pill.className = 'slot-pill';
               const input = document.createElement('input'); input.type = 'checkbox'; input.className = 'slot-checkbox'; input.dataset.slot = slotText;
-              pill.appendChild(input); pill.appendChild(document.createTextNode(slotText));
-              pill.addEventListener('click', function(e) { e.preventDefault(); input.checked = !input.checked; handleSlotChange(input, pill, row); });
+              const text = document.createElement('span'); text.className = 'slot-pill-text'; text.textContent = slotText;
+              pill.appendChild(input); pill.appendChild(text);
+              pill.addEventListener('click', function(e) { e.preventDefault(); if(input.disabled) return; input.checked = !input.checked; handleSlotChange(input, pill, row); });
               slots.appendChild(pill);
             });
             row.appendChild(label); row.appendChild(slots); panel.appendChild(row);
@@ -763,7 +794,8 @@
           const pid=row.dataset.period; const period=periodData.find(function(p){return p.id===pid;}); const day=period?period.days.find(function(d){return d.date===row.dataset.dayDate;}):null;
           const pLocked=!!lockedByPeriod[pid]; const past=day?isDayPast(day):false;
           row.classList.toggle('period-locked',pLocked); row.classList.toggle('past-locked',past);
-          row.querySelectorAll('.slot-checkbox').forEach(function(cb){if(pLocked||past){cb.checked=false;cb.disabled=true;cb.parentElement.classList.remove('selected');cb.parentElement.classList.add('disabled');}else{cb.disabled=false;cb.parentElement.classList.remove('disabled');}});
+          if(pLocked||past){ row.querySelectorAll('.slot-checkbox').forEach(function(cb){ cb.checked=false; }); }
+          syncRowSlotState(row);
         });
         const closedPeriod = periodData.find(function(p){return isPeriodClosed(p);});
         if(closedPeriod){const cd=new Date(CAMPAIGN_YEAR,closedPeriod.closeMonth-1,closedPeriod.closeDay); periodNoteText.textContent=closedPeriod.label+'（'+closedPeriod.range+'）報名已於 '+formatDate(cd)+' 截止，請選擇其他期數。'; periodNote.classList.add('visible');}
@@ -772,12 +804,14 @@
       }
 
       function handleSlotChange(cb, pill, row) {
-        const cbs = row.querySelectorAll('.slot-checkbox');
-        if(cb.checked){cbs.forEach(function(c){const p=c.parentElement;if(c===cb){p.classList.add('selected');p.classList.remove('disabled');}else{c.checked=false;c.disabled=true;p.classList.remove('selected');p.classList.add('disabled');}});}
-        else{cbs.forEach(function(c){c.disabled=false;c.parentElement.classList.remove('selected','disabled');});}
+        if(cb.disabled){ cb.checked = false; return; }
+        if(cb.checked){ row.querySelectorAll('.slot-checkbox').forEach(function(c){ if(c!==cb) c.checked=false; }); }
+        syncRowSlotState(row);
         if(getSelectedSlots().length>0) {
           if(selectedTrack==='B'){showQuestion(question5);updateOverseasProgression();}
           else{submitBar.classList.add('visible');}
+        } else {
+          submitBar.classList.remove('visible');
         }
       }
 
@@ -808,6 +842,7 @@
           trackOptions.forEach(function(o){o.classList.toggle('selected',o===btn);});
           currentTrackLabel.textContent=selectedTrack==='A'?'賽道 A｜本地流量':'賽道 B｜海外流量';
           formCard.classList.remove('hidden');
+          periodPanels.querySelectorAll('.day-row').forEach(syncRowSlotState);
           if(selectedTrack==='B'){
             if(getSelectedSlots().length>0){showQuestion(question5);submitBar.classList.remove('visible');}
           } else {
@@ -827,6 +862,7 @@
         selectedTrack=null; currentTrackLabel.textContent='尚未選擇';
         trackOptions.forEach(function(b){b.classList.remove('selected');});
         formCard.classList.add('hidden'); resetFormState();
+        periodPanels.querySelectorAll('.day-row').forEach(syncRowSlotState);
       });
 
       usernameInput.addEventListener('input',function(e){if(e.target.value.trim().length>=1)showQuestion(question2);});
